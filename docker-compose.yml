@@ -1,0 +1,43 @@
+version: '1'
+
+services:
+  m1:
+    build: m1/
+    ports: 
+      - 8050:8050
+    networks:
+      - m1-to-rabbit
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    command: node index.js
+
+  m2:
+    build: m2/
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - rabbit-to-m2
+  
+  rabbitmq:
+    hostname: rabbitmq
+    image: rabbitmq
+    ports:
+    - 15672:15672
+    - 5672:5672
+    networks:
+      - m1-to-rabbit
+      - rabbit-to-m2
+    healthcheck:
+      test: rabbitmq-diagnostics check_running || exit 1
+      interval: 5s
+      timeout: 1s
+      retries: 3
+      start_period: 5s
+
+networks:
+  m1-to-rabbit:
+    driver: bridge
+  rabbit-to-m2:
+    driver: bridge 
