@@ -1,5 +1,6 @@
 let amqp = require('amqplib/callback_api');
 
+
 amqp.connect('amqp://guest:guest@rabbitmq:5672/', function(error, connection) {
     if (error) {
         throw error;

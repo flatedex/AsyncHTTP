@@ -35,7 +35,7 @@ app.post('/', (req, res) => {
 });
 
 (async() =>{
-    amqp.connect('amqp://guest:guest@rabbitmq:5672/', function(error, connection) {
+    amqp.connect('amqp://guest:guest@rabbitmq:5672/', await function(error, connection) {
         if(error) {
             throw error;
         }
