@@ -19,6 +19,7 @@ services:
         condition: service_healthy
     networks:
       - rabbit-to-m2
+    command: node index.js
   
   rabbitmq:
     hostname: rabbitmq
@@ -31,10 +32,10 @@ services:
       - rabbit-to-m2
     healthcheck:
       test: rabbitmq-diagnostics check_running || exit 1
-      interval: 5s
+      interval: 1s
       timeout: 1s
-      retries: 3
-      start_period: 5s
+      retries: 10
+      start_period: 7s
 
 networks:
   m1-to-rabbit:
