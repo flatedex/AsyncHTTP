@@ -22,7 +22,7 @@ app.post('/', async (req, res) => {
     let name = JSON.stringify(req.body.Name);
     let message = JSON.stringify(req.body.Message);
 
-    console.log(name + " " + message);
+    console.log(name + "\n" + message);
 
     const connection = await amqp.connect('amqp://guest:guest@rabbitmq:5672/');
     const channel = await connection.createChannel();
@@ -37,24 +37,25 @@ app.post('/', async (req, res) => {
 
     channel.sendToQueue(queue, Buffer.from(msg));
     console.log(`Message by ${name} sent in "${queue}"`);
+
+    (async() => {
+        const connection = await amqp.connect('amqp://guest:guest@rabbitmq:5672/');
+    
+        const channel = await connection.createChannel();
+    
+        let queue = "toM1";
+        await channel.assertQueue(queue, {
+               durable: true
+        });
+    
+        await channel.consume(queue, function(msg) {
+            console.log("Received message from M2: %s", msg.content.toString());
+            res.send(msg.content.toString());
+        }, {
+            noAck: true
+        });
+    })();
 });
-
-(async() => {
-    const connection = await amqp.connect('amqp://guest:guest@rabbitmq:5672/');
-
-    const channel = await connection.createChannel();
-
-    let queue = "toM1";
-    await channel.assertQueue(queue, {
-           durable: true
-    });
-
-    await channel.consume(queue, function(msg) {
-        console.log("Received message from M2: %s", msg.content.toString());
-    }, {
-        noAck: true
-    });
-})();
 
 app.listen(PORT, HOST, async () => {
     console.log(`Service running on http://${HOST}:${PORT}`);
