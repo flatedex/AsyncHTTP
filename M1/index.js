@@ -2,7 +2,7 @@ const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
 const router = express.Router();
-let amqp = require('amqplib/callback_api');
+let amqp = require('amqplib');
 
 const PORT = 8050;
 const HOST = "0.0.0.0";
@@ -19,37 +19,42 @@ app.get('/', (req, res) => {
 });
 
 app.post('/', async (req, res) => {
-    let name = req.body.Name;
-    let message = req.body.Message;
+    let name = JSON.stringify(req.body.Name);
+    let message = JSON.stringify(req.body.Message);
 
-    const connection = await amqp.connect('amqp://guest:guest@rabbitmq:5672');
+    console.log(name + " " + message);
+
+    const connection = await amqp.connect('amqp://guest:guest@rabbitmq:5672/');
     const channel = await connection.createChannel();
-    console.log('M1 is connected to RabbitMQ');    
-    
-    let queue = "toM2";
+    console.log('M1 is connected to RabbitMQ');
+
+    const queue = "ToM2";
     let msg = message;
 
-    channel.assertQueue(queue, {
-           durable: false
+    await channel.assertQueue(queue, {
+           durable: true
     });
 
     channel.sendToQueue(queue, Buffer.from(msg));
-    console.log(`Message by ${name} sent to M1`);
+    console.log(`Message by ${name} sent in "${queue}"`);
 });
 
-(async() =>{
+(async() => {
     const connection = await amqp.connect('amqp://guest:guest@rabbitmq:5672/');
 
     const channel = await connection.createChannel();
 
     let queue = "toM1";
+    await channel.assertQueue(queue, {
+           durable: true
+    });
 
-    channel.consume(queue, function(msg) {
+    await channel.consume(queue, function(msg) {
         console.log("Received message from M2: %s", msg.content.toString());
     }, {
         noAck: true
     });
-});
+})();
 
 app.listen(PORT, HOST, async () => {
     console.log(`Service running on http://${HOST}:${PORT}`);
